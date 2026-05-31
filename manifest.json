@@ -1,0 +1,33 @@
+{
+  "name": "FinançasFácil – Orçamento Familiar",
+  "short_name": "FinançasFácil",
+  "description": "Controle completo do seu orçamento familiar com inteligência e simplicidade",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Nova Entrada",
+      "short_name": "Entrada",
+      "description": "Registrar nova entrada de dinheiro",
+      "url": "./index.html#entradas",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nova Saída",
+      "short_name": "Saída",
+      "description": "Registrar nova saída de dinheiro",
+      "url": "./index.html#saidas",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
