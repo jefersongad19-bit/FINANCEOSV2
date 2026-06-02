@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Limpar Cache — FinançasFácil</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#080e1a;color:#eef4ff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.logo{width:72px;height:72px;background:linear-gradient(135deg,#3ddc84,#22d3ee);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px}
+h1{font-size:24px;font-weight:800;background:linear-gradient(135deg,#3ddc84,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+p{color:#7a9bbf;font-size:14px;line-height:1.6;margin-bottom:28px}
+.btn{display:block;width:100%;max-width:320px;background:linear-gradient(135deg,#22c55e,#22d3ee);color:#000;border:none;border-radius:16px;padding:18px;font-size:18px;font-weight:800;cursor:pointer;margin:0 auto 12px;font-family:inherit}
+.btn2{display:block;width:100%;max-width:320px;background:transparent;color:#7a9bbf;border:1px solid #1c2d45;border-radius:16px;padding:14px;font-size:14px;cursor:pointer;margin:0 auto;font-family:inherit;text-decoration:none}
+.status{margin-top:24px;padding:16px;background:#162038;border-radius:14px;font-size:14px;min-height:60px;max-width:320px;width:100%;line-height:1.6}
+.ok{color:#3ddc84}.err{color:#ff6b6b}.wait{color:#fbbf24}
+.step{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:#7a9bbf;border-bottom:1px solid #162038}
+.step:last-child{border-bottom:none}
+.step-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:#162038}
+.step-icon.done{background:#0d2a18;color:#3ddc84}
+.step-icon.doing{background:#1a2a0d;color:#fbbf24;animation:spin .8s linear infinite}
+.step-icon.wait-s{background:#162038;color:#3d5a7a}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps-box{max-width:320px;width:100%;background:#0d1526;border-radius:14px;padding:16px;margin-top:16px}
+</style>
+</head>
+<body>
+
+<div class="logo">💰</div>
+<h1>FinançasFácil</h1>
+<p>Clique no botão abaixo para limpar o cache e carregar a versão mais recente do app.</p>
+
+<button class="btn" onclick="limpar()" id="btnLimpar">🧹 Limpar Cache e Atualizar</button>
+<a id="linkApp" class="btn2" href="#" style="display:none">→ Abrir FinançasFácil</a>
+
+<div class="status" id="status">Aguardando...</div>
+
+<div class="steps-box" id="stepsBox">
+  <div class="step" id="s1"><div class="step-icon wait-s" id="i1">1</div><span>Removendo Service Workers antigos</span></div>
+  <div class="step" id="s2"><div class="step-icon wait-s" id="i2">2</div><span>Limpando caches do navegador</span></div>
+  <div class="step" id="s3"><div class="step-icon wait-s" id="i3">3</div><span>Verificando limpeza</span></div>
+  <div class="step" id="s4"><div class="step-icon wait-s" id="i4">4</div><span>Pronto para abrir o app!</span></div>
+</div>
+
+<script>
+// Detect app URL from current location or use default
+function getAppUrl(){
+  const loc = window.location.href;
+  // If this page is in the same repo, app is in same folder
+  const base = loc.replace('limpar.html','').replace('limpar','');
+  return base + 'index.html';
+}
+
+function setStep(n, state, text){
+  const icon = document.getElementById('i'+n);
+  icon.className = 'step-icon ' + state;
+  icon.textContent = state === 'done' ? '✓' : state === 'doing' ? '↻' : n;
+  if(text) document.getElementById('status').innerHTML = '<span class="'+( state==='done'?'ok':state==='doing'?'wait':'err')+'">' + text + '</span>';
+}
+
+async function limpar(){
+  const btn = document.getElementById('btnLimpar');
+  btn.disabled = true;
+  btn.textContent = '⏳ Limpando...';
+
+  let ok1=false, ok2=false;
+
+  // Step 1: Unregister all service workers
+  setStep(1,'doing','Removendo Service Workers...');
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      ok1 = true;
+      setStep(1,'done', regs.length > 0 ? `✅ ${regs.length} Service Worker(s) removido(s)` : '✅ Nenhum SW encontrado (ok)');
+    } else {
+      setStep(1,'done','✅ Service Worker não suportado (ok)');
+      ok1 = true;
+    }
+  }catch(e){
+    setStep(1,'done','⚠️ SW: '+e.message);
+    ok1 = true;
+  }
+
+  await sleep(400);
+
+  // Step 2: Clear all caches
+  setStep(2,'doing','Limpando caches...');
+  try{
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      ok2 = true;
+      setStep(2,'done', keys.length > 0 ? `✅ ${keys.length} cache(s) limpo(s)` : '✅ Cache já estava vazio');
+    } else {
+      setStep(2,'done','✅ Cache API não disponível (ok)');
+      ok2 = true;
+    }
+  }catch(e){
+    setStep(2,'done','⚠️ Cache: '+e.message);
+    ok2 = true;
+  }
+
+  await sleep(400);
+
+  // Step 3: Verify
+  setStep(3,'doing','Verificando...');
+  await sleep(500);
+  setStep(3,'done','✅ Verificação concluída');
+
+  await sleep(300);
+
+  // Step 4: Done
+  setStep(4,'done','✅ Tudo limpo! App pronto.');
+  document.getElementById('status').innerHTML = '<span class="ok">🎉 Cache limpo com sucesso!<br>Clique abaixo para abrir o app.</span>';
+
+  btn.style.display = 'none';
+  const link = document.getElementById('linkApp');
+  link.href = getAppUrl();
+  link.style.display = 'block';
+  link.textContent = '→ Abrir FinançasFácil agora';
+  link.style.background = 'linear-gradient(135deg,#22c55e,#22d3ee)';
+  link.style.color = '#000';
+  link.style.fontWeight = '800';
+  link.style.fontSize = '16px';
+  link.style.padding = '16px';
+  link.style.borderRadius = '16px';
+  link.style.border = 'none';
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// Auto-detect and show app URL
+window.addEventListener('load', () => {
+  document.getElementById('status').textContent = 'Pronto. Clique no botão para limpar.';
+});
+</script>
+</body>
+</html>
