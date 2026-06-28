@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#080e1a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FinançasFácil"/>
+  <title>FinançasFácil</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <link rel="icon" href="icon-192.png"/>
+
+  
+
+  <script>
+    // Clear only OLD cache versions (not current ff-v10)
+    if('caches' in window){
+      caches.keys().then(keys=>
+        keys.filter(k=>k!=='ff-v10').forEach(k=>caches.delete(k))
+      );
+    }
+  </script>
+  <link rel="stylesheet" href="app.css"/>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+      <circle cx="40" cy="40" r="40" fill="url(#sg)"/>
+      <path d="M24 48 Q40 22 56 48" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="40" cy="37" r="7" fill="white"/>
+      <rect x="28" y="54" width="24" height="4" rx="2" fill="white"/>
+      <defs><linearGradient id="sg" x1="0" y1="0" x2="80" y2="80"><stop offset="0%" stop-color="#3ddc84"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+    </svg>
+  </div>
+  <h1 class="splash-title">FinançasFácil</h1>
+  <p class="splash-sub">Carregando seu painel...</p>
+  <div class="splash-bar"><div class="splash-prog"></div></div>
+</div>
+
+<div id="installBanner" class="install-banner hidden">
+  <div class="inst-icon">📲</div>
+  <div class="inst-text"><strong>Instalar FinançasFácil</strong><span>Funciona offline após instalação</span></div>
+  <button id="installBtn" class="btn-inst">⬇ Instalar</button>
+  <button id="installClose" class="btn-inst-x">✕</button>
+</div>
+
+<!-- TOOLTIP AJUDA -->
+<div id="helpTooltip" class="help-tooltip hidden">
+  <div class="help-tooltip-content">
+    <div class="help-tooltip-title" id="helpTitle"></div>
+    <div class="help-tooltip-body" id="helpBody"></div>
+    <button onclick="closeHelp()" class="help-close">Entendi ✓</button>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <header class="header">
+    <div class="hbrand">
+      <svg width="32" height="32" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="40" fill="url(#hg)"/>
+        <path d="M24 48 Q40 22 56 48" stroke="white" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="37" r="7" fill="white"/>
+        <rect x="28" y="54" width="24" height="4" rx="2" fill="white"/>
+        <defs><linearGradient id="hg" x1="0" y1="0" x2="80" y2="80"><stop offset="0%" stop-color="#3ddc84"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+      </svg>
+      <span>FinançasFácil</span>
+    </div>
+    <div class="hactions">
+      <button class="ibtn" id="notifBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="badge hidden" id="alertBadge">0</span>
+      </button>
+      <button class="ibtn" id="themeBtn">☀️</button>
+    </div>
+  </header>
+
+  <div id="alertPanel" class="alert-panel hidden">
+    <div class="ap-head"><h3>Alertas & Situação</h3><button onclick="closeAlerts()" class="ibtn">✕</button></div>
+    <div id="alertList" class="ap-list"></div>
+  </div>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="page-dashboard" class="page active">
+
+      <!-- HERO PRINCIPAL: SALDO ACUMULADO -->
+      <div class="hero-main">
+        <div class="hero-top-row">
+          <div class="hero-lbl">💰 Meu dinheiro disponível</div>
+          <button class="help-btn" onclick="showHelp('painel')">?</button>
+        </div>
+        <div class="hero-saldo-acu" id="saldoHistorico">R$ 0,00</div>
+        <div class="hero-saldo-sub">Saldo acumulado de tudo</div>
+
+        <!-- Barra visual de saúde -->
+        <div class="hero-health-bar">
+          <div class="hero-health-fill" id="healthFill"></div>
+        </div>
+        <div class="hero-health-label" id="healthLabel">Calculando...</div>
+      </div>
+
+      <!-- CARDS: O QUE ACONTECEU ESTE MÊS -->
+      <div class="mes-resumo-card">
+        <div class="mes-resumo-title" id="periodoLabel">Este mês — Junho 2026</div>
+        <div class="mes-resumo-grid">
+          <div class="mrs-item entrou">
+            <div class="mrs-icon">↑</div>
+            <div class="mrs-info">
+              <div class="mrs-lbl">Entrou</div>
+              <div class="mrs-val" id="dispEntradas">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="mrs-item saiu">
+            <div class="mrs-icon">↓</div>
+            <div class="mrs-info">
+              <div class="mrs-lbl">Saiu</div>
+              <div class="mrs-val" id="dispSaidas">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="mrs-item sobrou">
+            <div class="mrs-icon">=</div>
+            <div class="mrs-info">
+              <div class="mrs-lbl">Sobrou</div>
+              <div class="mrs-val" id="saldoDisplay">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTA: O QUE AINDA PRECISA PAGAR -->
+      <div id="alertaPendente" class="alerta-pendente hidden">
+        <div class="ap-icon">⚠️</div>
+        <div class="ap-info">
+          <div class="ap-titulo">Ainda precisa pagar este mês</div>
+          <div class="ap-val" id="apVal">R$ 0,00</div>
+        </div>
+        <button class="ap-btn" onclick="goPage('parcelas')">Ver →</button>
+      </div>
+
+      <!-- AÇÕES RÁPIDAS -->
+      <div class="acoes-rapidas">
+        <button class="ar-btn green" onclick="openModal('entrada')">
+          <span class="ar-icon">+💰</span>
+          <span>Recebi</span>
+        </button>
+        <button class="ar-btn red" onclick="openModal('saida')">
+          <span class="ar-icon">-💸</span>
+          <span>Gastei</span>
+        </button>
+        <button class="ar-btn cyan" onclick="iniciarVoz()">
+          <span class="ar-icon">🎤</span>
+          <span>Voz</span>
+        </button>
+        <button class="ar-btn blue" onclick="goPage('parcelas')">
+          <span class="ar-icon">🔄</span>
+          <span>Parcelas</span>
+        </button>
+        <button class="ar-btn purple" onclick="goPage('previsao')">
+          <span class="ar-icon">🔮</span>
+          <span>Previsão</span>
+        </button>
+      </div>
+
+      <!-- PERÍODO SELECTOR -->
+      <div class="period-selector-row">
+        <div class="psr-lbl">Ver por:</div>
+        <div class="period-row" style="margin:0">
+          <button class="pbtn active" data-p="mes">Mês</button>
+          <button class="pbtn" data-p="trimestre">Trimestre</button>
+          <button class="pbtn" data-p="ano">Ano</button>
+        </div>
+      </div>
+
+      <!-- Hidden elements needed by JS -->
+      <div style="display:none">
+        <canvas id="scoreGauge" width="90" height="90"></canvas>
+        <span id="scoreVal"></span><span id="scoreStatus"></span>
+        <span id="bbEnt"></span><span id="bbSai"></span><span id="bbPar"></span>
+        <span id="qEnt"></span><span id="qSai"></span><span id="qPar"></span>
+        <span id="qPrev"></span><span id="mesAnteriorVal"></span>
+        <span id="mesAnteriorLbl"></span><span id="mesAnteriorTend"></span>
+        <span id="ceRows"></span><span id="ceTotal"></span>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Fluxo de Caixa</h3>
+          <select id="chartMonths" class="sel-sm" onchange="drawFlow()"><option value="6">6 meses</option><option value="12">12 meses</option></select>
+        </div>
+        <canvas id="flowChart" height="140"></canvas>
+      </div>
+      <div class="card"><div class="card-head"><h3>Gastos por Categoria</h3></div><div id="catList"></div></div>
+      <div class="card"><div class="card-head"><h3>🤖 Análise Inteligente</h3></div><div id="suggList"></div></div>
+      <div class="card">
+        <div class="card-head"><h3>Últimas Transações</h3><button class="lbtn" onclick="goPage('historico')">Ver todas →</button></div>
+        <div id="recentTx"></div>
+      </div>
+    </section>
+
+    <!-- ENTRADAS -->
+    <section id="page-entradas" class="page">
+      <div class="phero green-hero">
+        <div class="phero-head"><h2>💰 Entradas</h2><button class="help-btn" onclick="showHelp('entradas')">?</button></div>
+        <div class="htotal green-t" id="entTotal">R$ 0,00</div>
+      </div>
+      <button class="fab" onclick="openModal('entrada')">+ Nova Entrada</button>
+      <div id="entList" class="txlist pad"></div>
+    </section>
+
+    <!-- SAÍDAS -->
+    <section id="page-saidas" class="page">
+      <div class="phero red-hero">
+        <div class="phero-head"><h2>💸 Saídas</h2><button class="help-btn" onclick="showHelp('saidas')">?</button></div>
+        <div class="htotal red-t" id="saiTotal">R$ 0,00</div>
+        <div class="htotal-sub">Saldo após saídas: <span id="saiSaldo" style="font-weight:800">R$ 0,00</span></div>
+      </div>
+      <button class="fab" onclick="openModal('saida')">+ Nova Saída</button>
+      <div id="saiList" class="txlist pad"></div>
+    </section>
+
+    <!-- PARCELAS -->
+    <section id="page-parcelas" class="page">
+      <div class="phero blue-hero">
+        <div class="phero-head"><h2>🔄 Parcelamentos</h2><button class="help-btn" onclick="showHelp('parcelas')">?</button></div>
+        <div class="htotal blue-t" id="parTotal">R$ 0,00 / mês</div>
+      </div>
+      <div id="parList"></div>
+    </section>
+
+    <!-- PREVISÃO -->
+    <section id="page-previsao" class="page">
+      <div class="prev-hero">
+        <div class="phero-head"><h2>🔮 Previsão Financeira</h2><button class="help-btn light" onclick="showHelp('previsao')">?</button></div>
+        <div class="prev-saldo neu" id="prevSaldo">R$ 0,00</div>
+        <div class="prev-meta">
+          <span>↑ <span id="prevEntTotal" style="color:var(--green);font-weight:700">R$ 0,00</span></span>
+          <span>↓ <span id="prevSaiTotal" style="color:var(--red);font-weight:700">R$ 0,00</span></span>
+        </div>
+      </div>
+      <div class="prev-month-nav">
+        <button onclick="prevChangeMonth(-1)">‹ Ant.</button>
+        <span id="prevMonthLabel">—</span>
+        <button onclick="prevChangeMonth(1)">Próx. ›</button>
+      </div>
+      <div class="prev-tip">💡 Simule entradas e saídas. Parcelas com vencimento no mês são carregadas automaticamente.</div>
+      <div class="prev-section">
+        <h3>💰 Entradas Previstas</h3>
+        <div class="prev-add-row">
+          <input type="text" id="prevEntDesc" placeholder="Ex: Salário, Bônus..." class="inp"/>
+          <input type="number" id="prevEntVal" placeholder="R$" step="0.01" class="inp" style="width:100px"/>
+          <button class="prev-btn-add" onclick="addPrevItem('entrada')">+ Add</button>
+        </div>
+        <div id="prevEntList"></div>
+      </div>
+      <div class="prev-section">
+        <h3>💸 Saídas Previstas</h3>
+        <div class="prev-add-row">
+          <input type="text" id="prevSaiDesc" placeholder="Ex: Água, Luz, Aluguel..." class="inp"/>
+          <input type="number" id="prevSaiVal" placeholder="R$" step="0.01" class="inp" style="width:100px"/>
+          <button class="prev-btn-add red" onclick="addPrevItem('saida')">+ Add</button>
+        </div>
+        <div id="prevSaiList"></div>
+      </div>
+      <div class="prev-summary">
+        <div class="prev-sum-row"><span class="prev-sum-lbl">Total entradas</span><span class="prev-sum-val green-t" id="sumEnt">R$ 0,00</span></div>
+        <div class="prev-sum-row"><span class="prev-sum-lbl">Total saídas</span><span class="prev-sum-val red-t" id="sumSai">R$ 0,00</span></div>
+        <div class="prev-sum-row"><span class="prev-sum-lbl" style="font-weight:800;color:var(--text)">Saldo previsto</span><span class="prev-sum-val" id="sumSaldo">R$ 0,00</span></div>
+      </div>
+      <div class="card" style="margin-top:0"><div class="card-head"><h3>🤖 Análise da Previsão</h3></div><div id="prevAnalise"></div></div>
+    </section>
+
+    <!-- METAS & SONHOS -->
+    <section id="page-metas" class="page">
+      <div class="phero" style="background:linear-gradient(160deg,#1a1205,#0e0c04)">
+        <div class="phero-head"><h2>🎯 Metas & Sonhos</h2><button class="help-btn" onclick="showHelp('metas')">?</button></div>
+        <div class="htotal" style="color:var(--gold)">Planeje seu futuro</div>
+      </div>
+
+      <!-- Tabs metas -->
+      <div class="par-tabs" style="margin:14px">
+        <button class="par-tab active" onclick="setMetaTab('metas',this)">🎯 Metas</button>
+        <button class="par-tab" onclick="setMetaTab('investimentos',this)">📈 Investimentos</button>
+        <button class="par-tab" onclick="setMetaTab('sonhos',this)">✨ Sonhos</button>
+      </div>
+
+      <!-- METAS -->
+      <div id="tab-metas">
+        <div class="sim-block">
+          <h3>+ Nova Meta</h3>
+          <div class="fg"><label>Nome da meta</label><input type="text" id="metaNome" placeholder="Ex: Viagem, Reforma..." class="inp"/></div>
+          <div class="fg"><label>Valor necessário (R$)</label><input type="number" id="metaVal" placeholder="Ex: 15000" class="inp"/></div>
+          <div class="fg"><label>Valor já guardado (R$)</label><input type="number" id="metaGuardado" placeholder="0" class="inp" value="0"/></div>
+          <div class="fg"><label>Data alvo</label><input type="date" id="metaData" class="inp"/></div>
+          <div class="fg"><label>Categoria</label>
+            <select id="metaCat" class="inp">
+              <option value="Geral">Geral</option><option value="Viagem">✈️ Viagem</option>
+              <option value="Moradia">🏠 Moradia</option><option value="Veículo">🚗 Veículo</option>
+              <option value="Educação">📚 Educação</option><option value="Saúde">💊 Saúde</option>
+              <option value="Reserva">🏦 Reserva de Emergência</option>
+            </select>
+          </div>
+          <button class="btnp full" onclick="addMeta()">+ Adicionar Meta</button>
+        </div>
+        <div id="metasList" style="padding:0 14px"></div>
+
+        <!-- Simulador economia -->
+        <div class="sim-block">
+          <h3>📊 Simular Economia</h3>
+          <div class="fg"><label>Meta (R$)</label><input type="number" id="simMeta" placeholder="Ex: 5000" class="inp"/></div>
+          <div class="fg"><label>Poupar por mês (R$)</label><input type="number" id="simPoup" placeholder="Ex: 500" class="inp"/></div>
+          <div class="fg"><label>Rendimento ao mês (%)</label><input type="number" id="simTaxa" step="0.1" class="inp" value="0.8"/></div>
+          <button class="btnp" onclick="calcEco()">🔍 Simular</button>
+          <div id="ecoRes" class="simres hidden"></div>
+        </div>
+        <div class="sim-block">
+          <h3>💳 Simular Crédito (Tabela Price)</h3>
+          <div class="fg"><label>Valor do empréstimo (R$)</label><input type="number" id="credVal" placeholder="Ex: 10000" class="inp"/></div>
+          <div class="fg"><label>Número de parcelas</label><input type="number" id="credN" placeholder="Ex: 12" class="inp"/></div>
+          <div class="fg"><label>Taxa mensal (%)</label><input type="number" id="credTax" step="0.1" class="inp" value="2.5"/></div>
+          <button class="btnp" onclick="calcCred()">🔍 Calcular</button>
+          <div id="credRes" class="simres hidden"></div>
+        </div>
+      </div>
+
+      <!-- INVESTIMENTOS -->
+      <div id="tab-investimentos" style="display:none">
+        <div class="sim-block">
+          <h3>+ Novo Investimento</h3>
+          <div class="fg"><label>Descrição</label><input type="text" id="invNome" placeholder="Ex: CDB Banco X, Tesouro..." class="inp"/></div>
+          <div class="fg"><label>Valor investido (R$)</label><input type="number" id="invValor" placeholder="Ex: 1000" class="inp"/></div>
+          <div class="fg"><label>Rendimento anual esperado (%)</label><input type="number" id="invRend" placeholder="Ex: 12" step="0.1" class="inp"/></div>
+          <div class="fg"><label>Data de início</label><input type="date" id="invData" class="inp"/></div>
+          <button class="btnp full" onclick="addInvestimento()">+ Adicionar</button>
+        </div>
+        <div id="invList" style="padding:0 14px"></div>
+      </div>
+
+      <!-- SONHOS -->
+      <div id="tab-sonhos" style="display:none">
+        <div class="prev-tip" style="margin:14px">✨ Registre seus sonhos e visualize o custo estimado. Inspire-se a alcançá-los!</div>
+        <div class="sim-block">
+          <h3>+ Novo Sonho</h3>
+          <div class="fg"><label>Sonho</label><input type="text" id="sonhoNome" placeholder="Ex: Casa própria, Viagem à Europa..." class="inp"/></div>
+          <div class="fg"><label>Custo estimado (R$)</label><input type="number" id="sonhoValor" placeholder="Ex: 300000" class="inp"/></div>
+          <div class="fg"><label>Emoji</label><input type="text" id="sonhoEmoji" placeholder="🏠" class="inp" style="font-size:24px;text-align:center" maxlength="2"/></div>
+          <button class="btnp full" onclick="addSonho()">+ Adicionar Sonho</button>
+        </div>
+        <div id="sonhosList" style="padding:0 14px"></div>
+      </div>
+    </section>
+
+    <!-- FAMÍLIA -->
+    <section id="page-familia" class="page">
+      <div class="fam-hero">
+        <div class="phero-head"><h2>👨‍👩‍👧 Orçamento Familiar</h2><button class="help-btn light" onclick="showHelp('familia')">?</button></div>
+        <p>Consolide os dados da família via QR Code ou código.</p>
+      </div>
+      <div class="fam-section">
+        <h3>👤 Meu Perfil</h3>
+        <p>Nome para identificar seus dados ao compartilhar.</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="meuNome" placeholder="Seu nome..." class="inp" style="flex:1"/>
+          <button class="btnp" onclick="salvarNome()">Salvar</button>
+        </div>
+        <div class="fam-mes-row">
+          <label>Mês do consolidado</label>
+          <select id="famMesSel" class="par-mes-sel" onchange="renderFamilia()"></select>
+        </div>
+      </div>
+      <div style="margin:0 14px 14px">
+        <div class="fam-qr-section">
+          <button class="fam-qr-btn generate" onclick="abrirQRGerar()">
+            <span class="btn-icon-big">📲</span><span>Gerar QR Code</span>
+          </button>
+          <button class="fam-qr-btn scan" onclick="abrirQRLer()">
+            <span class="btn-icon-big">📷</span><span>Ler QR Code</span>
+          </button>
+        </div>
+        <div class="fam-section" style="margin:0">
+          <h3>📥 Importar por código</h3>
+          <p>Cole o código recebido por WhatsApp ou e-mail.</p>
+          <textarea id="importCode" class="import-area" placeholder="Cole o código aqui..."></textarea>
+          <button class="btnp full" onclick="importarMembro()" style="margin-top:10px">✅ Importar</button>
+        </div>
+      </div>
+      <div id="famPainel"></div>
+    </section>
+
+
+    <!-- ANÁLISE IA -->
+    <section id="page-analise" class="page">
+      <div class="analise-hero">
+        <div class="phero-head"><h2>🧠 Análise Financeira</h2><button class="help-btn light" onclick="showHelp('analise')">?</button></div>
+        <p>Análise completa da sua situação econômica com plano de ação personalizado.</p>
+      </div>
+
+      <button class="analise-btn-big" id="btnAnalise" onclick="executarAnalise()">
+        🔍 Analisar Minha Situação Financeira
+      </button>
+
+      <div id="analiseResultado">
+        <div class="analise-empty">
+          <div class="eic">🧠</div>
+          <p>Clique no botão acima para gerar sua análise completa</p>
+        </div>
+      </div>
+
+      <div class="rel-btn-row" id="relBtns" style="display:none">
+        <button class="rel-btn html-btn" onclick="gerarRelatorioHTML()">
+          <span class="rel-icon">📄</span>
+          <span>Relatório HTML</span>
+          <span style="font-size:10px;opacity:.7">Abrir no navegador</span>
+        </button>
+        <button class="rel-btn pdf-btn" onclick="gerarRelatorioPDF()">
+          <span class="rel-icon">🖨️</span>
+          <span>Imprimir / PDF</span>
+          <span style="font-size:10px;opacity:.7">Salvar como PDF</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="page-historico" class="page">
+      <div class="phero dark-hero"><h2>📋 Histórico</h2></div>
+      <div class="fbar">
+        <select id="fTipo" class="fsel" onchange="renderHist()"><option value="todos">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option><option value="parcela">Parcelas</option></select>
+        <select id="fMes" class="fsel" onchange="renderHist()"><option value="todos">Todos os meses</option></select>
+        <input type="text" id="fBusca" class="finp" placeholder="🔍 Buscar..." oninput="renderHist()"/>
+      </div>
+      <div id="histList" class="txlist pad"></div>
+    </section>
+
+  </main>
+
+  <!-- NAV -->
+  <nav class="bnav" style="overflow-x:auto;justify-content:flex-start;gap:0;padding:0 2px">
+    <button class="ni active" data-page="dashboard" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Painel</span>
+    </button>
+    <button class="ni" data-page="entradas" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Entradas</span>
+    </button>
+    <button class="ni" data-page="saidas" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+      <span>Saídas</span>
+    </button>
+    <button class="ni" data-page="parcelas" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      <span>Parcelas</span>
+    </button>
+    <button class="ni" data-page="previsao" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span>Previsão</span>
+    </button>
+    <button class="ni" data-page="metas" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>Metas</span>
+    </button>
+    <button class="ni" data-page="analise" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"/><path d="M15 13v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2"/><path d="M21 13v-8a2 2 0 00-2-2h-2a2 2 0 00-2 2v8a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+      <span>Análise</span>
+    </button>
+    <button class="ni" data-page="familia" style="min-width:52px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Família</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL TRANSAÇÃO -->
+<!-- VOICE INPUT OVERLAY -->
+<div class="voice-ov" id="voiceOv">
+  <div class="voice-waves" id="voiceWaves">
+    <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
+    <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
+    <div class="voice-wave"></div><div class="voice-wave"></div>
+  </div>
+  <div class="voice-texto" id="voiceTexto">Ouvindo…</div>
+  <div class="voice-sub" id="voiceSub">Fale a transação naturalmente</div>
+  <div class="voice-dicas">
+    <div class="voice-dica" onclick="voiceSimular('gasolina cinquenta reais')">⛽ "Gasolina 50 reais"</div>
+    <div class="voice-dica" onclick="voiceSimular('entrada de cinco mil salário')">💼 "Entrada 5000 salário"</div>
+    <div class="voice-dica" onclick="voiceSimular('mercado cento e vinte reais')">🛒 "Mercado 120 reais"</div>
+    <div class="voice-dica" onclick="voiceSimular('aluguel mil e duzentos reais')">🏠 "Aluguel 1200 reais"</div>
+    <div class="voice-dica" onclick="voiceSimular('farmácia trinta e cinco reais')">💊 "Farmácia 35 reais"</div>
+    <div class="voice-dica" onclick="voiceSimular('freelance recebido dois mil')">💻 "Freelance 2000"</div>
+  </div>
+  <button class="voice-cancelar" onclick="voiceCancelar()">✕ Cancelar</button>
+</div>
+
+<div id="modal" class="modal-ov hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalTitle">Nova Transação</h3><button onclick="closeModal()" class="ibtn">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="txId"/><input type="hidden" id="txTipo"/>
+      <div class="fg" id="typeGrp" style="display:none">
+        <label>Tipo de parcelamento</label>
+        <div class="type-sel">
+          <button class="type-opt sel-credit" data-type="credcard" onclick="selectType(this,'credcard')">💳<br>Crediário</button>
+          <button class="type-opt" data-type="financing" onclick="selectType(this,'financing')">🏦<br>Financiamento</button>
+          <button class="type-opt" data-type="credit" onclick="selectType(this,'credit')">🔄<br>Cartão</button>
+        </div>
+      </div>
+      <div class="fg"><label>Descrição *</label><input type="text" id="txDesc" placeholder="Ex: Salário, Aluguel..." class="inp"/></div>
+      <div class="fg" id="valSingle"><label>Valor (R$) *</label><input type="number" id="txVal" placeholder="0,00" step="0.01" class="inp"/></div>
+      <div id="valDual" style="display:none">
+        <div class="fg" id="parcelNGrp">
+          <label>Número de parcelas *</label>
+          <input type="number" id="txParc" placeholder="Ex: 12" min="1" max="360" class="inp" value="1" oninput="calcDual('n')"/>
+        </div>
+        <div class="val-dual-lbl">Valor — preencha um campo, o outro calcula automático</div>
+        <div class="val-dual">
+          <div><input type="number" id="vTotal" placeholder="Valor total (R$)" step="0.01" class="inp" oninput="calcDual('total')"/><div class="val-sub">Total da dívida</div></div>
+          <div><input type="number" id="vParc" placeholder="Valor da parcela (R$)" step="0.01" class="inp" oninput="calcDual('parc')"/><div class="val-sub">Por parcela</div></div>
+        </div>
+        <div class="fg" style="margin-top:14px">
+          <label>Dia de vencimento (1 a 31)</label>
+          <input type="number" id="txDiaVenc" placeholder="Ex: 5 (dia 5 de cada mês)" min="1" max="31" class="inp"/>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Se não preenchido, usa o dia da data de início</div>
+        </div>
+      </div>
+      <div class="fg"><label>Data de início *</label><input type="date" id="txData" class="inp"/></div>
+      <div class="fg">
+        <label>Categoria</label>
+        <select id="txCat" class="inp">
+          <option>Geral</option><option>🍔 Alimentação</option><option>🏠 Moradia</option>
+          <option>🚗 Transporte</option><option>💊 Saúde</option><option>📚 Educação</option>
+          <option>🎮 Lazer</option><option>👕 Vestuário</option><option>💼 Salário</option>
+          <option>💻 Freelance</option><option>📈 Investimentos</option><option>🔖 Outros</option>
+        </select>
+      </div>
+      <div class="fg" id="parcelGrp" style="display:none">
+        <label>Número de parcelas (1 = à vista)</label>
+        <input type="number" id="txParcSaida" placeholder="1" min="1" max="360" class="inp" value="1"/>
+      </div>
+      <div class="fg" id="recGrp">
+        <label>Recorrência</label>
+        <select id="txRec" class="inp">
+          <option value="nenhuma">Sem recorrência</option><option value="mensal">Mensal</option>
+          <option value="quinzenal">Quinzenal</option><option value="semanal">Semanal</option><option value="anual">Anual</option>
+        </select>
+      </div>
+      <div class="fg"><label>Observação</label><textarea id="txObs" placeholder="Opcional..." class="inp" rows="2"></textarea></div>
+      <button class="btnp full" onclick="salvar()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PARCELA -->
+<div id="parModal" class="modal-ov hidden">
+  <div class="modal-box">
+    <div class="modal-head"><h3>✏️ Editar Parcelamento</h3><button onclick="fecharParModal()" class="ibtn">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="parEditId"/>
+      <div class="fg"><label>Descrição *</label><input type="text" id="parEditDesc" class="inp"/></div>
+      <div class="fg"><label>Número de parcelas</label><input type="number" id="parEditN" class="inp" readonly style="opacity:.6"/></div>
+      <div class="fg"><label>Valor da parcela (R$) *</label><input type="number" id="parEditValParc" step="0.01" class="inp" oninput="parEditCalc('parc')"/></div>
+      <div class="fg"><label>Valor total (R$)</label><input type="number" id="parEditValTotal" step="0.01" class="inp" oninput="parEditCalc('total')"/></div>
+      <div class="fg"><label>Dia de vencimento (1 a 31)</label><input type="number" id="parEditDiaVenc" min="1" max="31" class="inp" placeholder="Ex: 5"/></div>
+      <div class="fg"><label>Categoria</label>
+        <select id="parEditCat" class="inp">
+          <option>Geral</option><option>🍔 Alimentação</option><option>🏠 Moradia</option>
+          <option>🚗 Transporte</option><option>💊 Saúde</option><option>📚 Educação</option>
+          <option>🎮 Lazer</option><option>👕 Vestuário</option><option>🔖 Outros</option>
+        </select>
+      </div>
+      <div class="fg"><label>Tipo</label>
+        <select id="parEditTipo" class="inp">
+          <option value="credcard">💳 Crediário</option>
+          <option value="financing">🏦 Financiamento</option>
+          <option value="credit">🔄 Cartão</option>
+        </select>
+      </div>
+      <button class="btnp full" onclick="salvarParEdit()">💾 Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL APONTAMENTO PARCELA -->
+<div id="pagModal" class="modal-ov hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="pagModalTitle">📋 Apontar Parcela</h3>
+      <button onclick="fecharPagModal()" class="ibtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pagParId"/>
+      <input type="hidden" id="pagIdx"/>
+
+      <!-- INFO DA PARCELA -->
+      <div class="pag-par-info">
+        <div class="pag-desc" id="pagDescInfo"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="pag-val" id="pagValInfo"></div>
+          <div id="pagVencInfo" style="font-size:12px;color:var(--text3);font-weight:600"></div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Escolha -->
+      <div id="pagStep1">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;text-align:center;font-weight:600">O que aconteceu com esta parcela?</div>
+        <div style="display:grid;gap:10px">
+          <button class="pag-choice-btn pago" onclick="escolherApontamento('pago')">
+            <span style="font-size:24px">✅</span>
+            <div>
+              <div style="font-weight:800;font-size:15px">Paguei</div>
+              <div style="font-size:12px;opacity:.8">Registrar data e valor pago</div>
+            </div>
+          </button>
+          <button class="pag-choice-btn atrasado" onclick="escolherApontamento('atrasado')">
+            <span style="font-size:24px">⚠️</span>
+            <div>
+              <div style="font-weight:800;font-size:15px">Está atrasada</div>
+              <div style="font-size:12px;opacity:.8">Marcar como em atraso</div>
+            </div>
+          </button>
+          <button class="pag-choice-btn pendente" onclick="escolherApontamento('pendente')">
+            <span style="font-size:24px">⏳</span>
+            <div>
+              <div style="font-weight:800;font-size:15px">Ainda pendente</div>
+              <div style="font-size:12px;opacity:.8">Manter como pendente</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Detalhes pagamento -->
+      <div id="pagStep2" style="display:none">
+        <button onclick="voltarStep1()" style="background:none;border:none;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);margin-bottom:16px;padding:0">← Voltar</button>
+        <div class="fg"><label>Data do pagamento *</label><input type="date" id="pagData" class="inp"/></div>
+        <div class="fg">
+          <label>Valor pago (R$) *</label>
+          <input type="number" id="pagValor" step="0.01" class="inp"/>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">💡 Deixe igual à parcela se pagou o valor exato</div>
+        </div>
+        <button class="btnp full" onclick="confirmarPagamento()">✅ Confirmar pagamento</button>
+      </div>
+
+      <!-- STEP 3: Confirmar atraso -->
+      <div id="pagStep3" style="display:none">
+        <div style="background:var(--redb);border:1px solid var(--red);border-radius:14px;padding:16px;text-align:center;margin-bottom:16px">
+          <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+          <div style="font-size:15px;font-weight:800;color:var(--red);margin-bottom:4px">Parcela em Atraso</div>
+          <div style="font-size:13px;color:var(--text2)" id="pagAtrasadoInfo"></div>
+        </div>
+        <button class="btnp full" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff" onclick="confirmarAtrasado()">⚠️ Confirmar como Atrasada</button>
+        <button onclick="voltarStep1()" style="display:block;width:100%;margin-top:10px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">← Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL QR GERAR -->
+<div id="qrGerarModal" class="qr-modal-ov hidden">
+  <div class="qr-modal-box">
+    <h3>📲 Seu QR Code do Mês</h3>
+    <p>Peça ao familiar para escanear com o app.</p>
+    <div id="qrCodeDiv" style="display:flex;justify-content:center;margin-bottom:16px"></div>
+    <div style="background:var(--bg3);border-radius:10px;padding:10px;margin-bottom:14px;font-size:11px;color:var(--text3);word-break:break-all;max-height:60px;overflow:hidden" id="qrCodeTxt"></div>
+    <div class="qr-actions">
+      <button onclick="copiarCodigoQR()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2)">📋 Copiar código</button>
+      <button onclick="compartilharQR()" style="background:#25d366;color:#fff">💬 WhatsApp</button>
+    </div>
+    <button onclick="fecharQRGerar()" style="width:100%;margin-top:10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:12px;padding:10px;cursor:pointer;font-family:var(--font)">✕ Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL QR LER -->
+<div id="qrLerModal" class="qr-modal-ov hidden">
+  <div class="qr-modal-box">
+    <h3>📷 Escanear QR Code</h3>
+    <p>Aponte para o QR Code do familiar.</p>
+    <div class="qr-scan-area" id="qrScanArea">
+      <video id="qrVideo" playsinline autoplay muted></video>
+      <div class="qr-scan-frame"></div>
+      <div class="qr-scan-line"></div>
+      <div class="qr-scan-corner tl"></div><div class="qr-scan-corner tr"></div>
+      <div class="qr-scan-corner bl"></div><div class="qr-scan-corner br"></div>
+    </div>
+    <div id="qrScanStatus" style="font-size:13px;color:var(--text2);margin-bottom:12px">Aguardando câmera...</div>
+    <button onclick="fecharQRLer()" style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)">✕ Cancelar</button>
+  </div>
+</div>
+
+<!-- TOOLTIP AJUDA -->
+<div id="helpTooltip" class="help-tooltip hidden">
+  <div class="help-overlay" onclick="closeHelp()"></div>
+  <div class="help-tooltip-content">
+    <div class="help-tooltip-title" id="helpTitle"></div>
+    <div class="help-tooltip-body" id="helpBody"></div>
+    <button onclick="closeHelp()" class="help-close">Entendi ✓</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="db.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+<script defer>function loadQR(cb){if(window.QRCode){cb&&cb();return;}var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";s.onload=cb;document.head.appendChild(s);}</script>
+</body>
+</html>
